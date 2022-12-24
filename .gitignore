@@ -1,0 +1,5 @@
+output-*
+packer_cache
+log/*
+miniroot*
+tmp

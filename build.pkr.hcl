@@ -74,7 +74,7 @@ source "vmware-iso" "openbsd-packer" {
     "user<return><wait1s>",
     "user<return><wait1s>",
     "no<return><wait1s>",
-    "Europe/Berlin<return><wait1s>",
+    "<return><wait1s>",
     "?<return><wait1s>",
     "sd0<return><wait1s>",
     "whole<return><wait1s>",

@@ -1,0 +1,60 @@
+= Running an OpenBSD VM using VMWare Fusion on Apple Silicon
+
+:Author:                         Timo Pallach
+:Email:                          timo@pallach.de
+:sectnums:
+:toc:
+
+== Getting Started
+
+=== Prerequisites
+
+We need homebrew to be installed and configured correctly:
+
+[source,sh]
+[subs="verbatim,attributes"]
+----
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+----
+
+=== Install the required packages using homebrew
+
+[source,sh]
+[subs="verbatim,attributes"]
+----
+brew install curl coreutils qemu packer vmware-fusion git
+----
+
+=== Get the latest version of this repo
+
+[source,sh]
+[subs="verbatim,attributes"]
+----
+git clone https://github.com/xoro/OpenBSD-VM-at-AppleSilicon.git
+----
+
+=== Run the build script
+
+[source,sh]
+[subs="verbatim,attributes"]
+----
+cd OpenBSD-VM-at-AppleSilicon
+./build.sh
+----
+
+=== Overseve the VM creation process
+
+Tail the packer log file:
+
+[source,sh]
+[subs="verbatim,attributes"]
+----
+cd OpenBSD-VM-at-AppleSilicon
+tail -f log/packer.log
+----
+
+View the build process via VNC. Just access vnc://127.0.0.1:5987
+
+== Start the created OpenVM
+
+After the build process finished successfully you can open and start the VM using VMWare Fusion (File->Open And Run...->OpenBSD-VM-at-AppleSilicon/output-openbsd-packer/packer-openbsd-packer.vmx).

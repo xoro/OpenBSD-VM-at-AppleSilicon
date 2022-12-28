@@ -1,14 +1,5 @@
-###############################################################################
-# Use at least this packer version
-###############################################################################
 packer {
   required_version = ">= 1.8.0"
-}
-
-###############################################################################
-# Installing Plugins
-###############################################################################
-packer {
   required_plugins {
     vmware = {
       version = "= 1.0.7"
@@ -17,121 +8,122 @@ packer {
   }
 }
 
-###############################################################################
-# Defining Locals
-###############################################################################
-#locals {
-#  number_of_ports       = length(convert({ "www" = "80" }, map(string)))
-#  default-communicator  = "ssh"
-#  default-cpus-virt     = "4"
-#  default-cpus-emu      = "4"
-#  default-memory        = "4096"
-#  default-disk_size     = "50000"
-#  default-host-port-min = "54321"
-#  default-host-port-max = "54321"
-#  default-vnc-port-min  = "5999"
-#  default-vnc-port-max  = "5999"
-#  root-username         = "root"
-#  root-password         = "root"
-#  # OpenBSD specific stuff
-#  openbsd-version          = "${var.openbsd-version}"
-#  openbsd-version-short    = replace("${var.openbsd-version}", ".", "")
-#  openbsd-iso-url          = "https://cdn.openbsd.org/pub/OpenBSD/${local.openbsd-version}/amd64/install${local.openbsd-version-short}.iso"
-#  openbsd-iso-checksum     = "file:https://cdn.openbsd.org/pub/OpenBSD/${local.openbsd-version}/amd64/SHA256"
-#  openbsd-shutdown-command = "shutdown -p now"
-#}
-
-###############################################################################
-# Defining Variables
-###############################################################################
-variable "openbsd-boot-command-vmware" {
-  type = list(string)
-  default = [
-    "install<wait1s><return><wait1s>",
-    "default<wait1s><return><wait1s>",
-    "flyingddns<wait1s><return><wait1s>",
-    "<wait1s><return><wait1s>",
-    "autoconf<wait1s><return><wait10s>",
-    "none<wait1s><return><wait1s>",
-    "done<wait1s><return><wait1s>",
-    "root<wait1s><return><wait1s>",
-    "root<wait1s><return><wait1s>",
-    "yes<wait1s><return><wait1s>",
-    "no<wait1s><return><wait1s>",
-    "no<wait1s><return><wait1s>",
-    "no<wait1s><return><wait1s>",
-    "yes<wait1s><return><wait1s>",
-    "<wait1s><return><wait1s>",
-    "<wait1s><return><wait1s>",
-    "whole<wait1s><return><wait1s>",
-    "edit<wait1s><return><wait1s>",
-    "zz<wait1s><return><wait1s>",
-    "a b<wait1s><return><wait1s>",
-    "<wait1s><return><wait1s>",
-    "1G<wait1s><return><wait1s>",
-    "swap<wait1s><return><wait1s>",
-    "a a<wait1s><return><wait1s>",
-    "<wait1s><return><wait1s>",
-    "<wait1s><return><wait1s>",
-    "<wait1s><return><wait1s>",
-    "/<wait1s><return><wait1s>",
-    "write<wait1s><return><wait1s>",
-    "quit<wait1s><return><wait1s>",
-    "cd0<wait1s><return><wait1s>",
-    "<wait1s><return><wait1s>",
-    "done<wait1s><return><wait1s>",
-    "yes<wait1s><return><wait300s>",
-    "done<wait1s><return><wait150s>",
-    "reboot<wait1s><return><wait120s>",
-    "root<wait1s><return><wait1s>",
-    "root<wait1s><return><wait2s>",
-    "exit<wait1s><return><wait1s>",
-  ]
+variable "miniroot-img" {
+  type    = string
+  default = ""
 }
-
-###############################################################################
-# Defining the Builds
-###############################################################################
-# OpenBSD AMD64
-##############################################################################
-build {
-  name = "openbsd-build"
-  sources = [
-    "sources.vmware-iso.openbsd-arm64",
-  ]
-  # Copy the ssh pub key to the vm
-  provisioner "file" {
-    source      = pathexpand("~/.ssh/id_ed25519.pub")
-    destination = "/root/.ssh/authorized_keys"
-  }
-}
-
-###############################################################################
-# Defining the Sources
-###############################################################################
-source "vmware-iso" "openbsd-arm64" {
-  vm_name          = "openbsd-arm64"
-  communicator     = "ssh"
-  ssh_username     = "root"
-  ssh_password     = "root"
-  shutdown_command = "shutdown -p now"
-  headless         = "true"
-  skip_export      = "true"
-  skip_compaction  = "true"
-  cpus             = "2"
-  memory           = "4096"
-  disk_size        = "64000"
-  boot_wait        = "25s"
-  iso_url          = "miniroot72.iso"
-  iso_checksum     = "md5:d41d8cd98f00b204e9800998ecf8427e"
-  boot_command     = "${var.openbsd-boot-command-vmware}"
+source "vmware-iso" "openbsd-packer" {
+  version = "20"
+  iso_url = "./empty.iso"
+  iso_checksum = "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  ssh_username = "user"
+  ssh_password = "user"
+  ssh_host = "openbsd-packer"
+  vnc_port_min = "5987"
+  vnc_port_max = "5987"
+  vnc_disable_password = "true"
+  shutdown_command = "doas /sbin/shutdown -p now"
+  keep_registered  = "false"
+  skip_export = "false"
+  headless = "true"
+  format = "vmx"
+  cpus = "4"
+  memory = "4096"
+  disk_adapter_type = "nvme"
+  disk_size = "64000"
+  network_adapter_type = "e1000e"
+  guest_os_type = "arm-other-64"
   vmx_data = {
+    "firmware" = "efi"
+    # We need the USB stuff for packer to type text.
+    "usb.present" = "TRUE"
+    "ehci.present" = "TRUE"
+    "usb_xhci.present" = "TRUE"
+    # We have to add the vmdk converted OpenBSD miniroot image file,
     "nvme0.present" = "TRUE"
-    "nvme0:0.fileName" = "miniroot72.vmdk"
-    "nvme0:0.present" = "TRUE"
-    "bios.hddOrder" = "nvme0:0"
+    "nvme0:1.fileName" = "${var.miniroot-img}"
+    "nvme0:1.present" = "TRUE"
+    # and make sure to boot from it.
+    "bios.bootOrder" = "HDD"
+    "bios.hddOrder" = "nvme0:1"
+    # We are using a custom bridge network config,
+    # because the download of the OpenBSD packages via NAT is extremely slow!!!
+    "ethernet0.addresstype" = "static"
+    "ethernet0.generatedaddressoffset" = "0"
+    "ethernet0.connectiontype" = "custom"
+    "ethernet0.displayname" = "Wi-Fi" 
+    "ethernet0.linkstatepropagation.enable" = "TRUE"
+    "ethernet0.pcislotnumber" = "160"
+    "ethernet0.present" = "TRUE"
+    "ethernet0.wakeonpcktrcv" = "FALSE"
+    "ethernet0.address" = "00:0C:29:49:A7:51"
   }
-#  vmx_data_post = {
-#  }
-  #keep_registered  = "true"
+  boot_wait = "20s"
+  boot_command = [
+    "install<return><wait1s>",
+    "openbsd-packer<return><wait1s>",
+    "<return><wait1s>",
+    "autoconf<return><wait5s>",
+    "none<return><wait1s>",
+    "done<return><wait1s>",
+    "root<return><wait1s>",
+    "root<return><wait1s>",
+    "yes<return><wait1s>",
+    "user<return><wait1s>",
+    "user<return><wait1s>",
+    "user<return><wait1s>",
+    "user<return><wait1s>",
+    "no<return><wait1s>",
+    "Europe/Berlin<return><wait1s>",
+    "?<return><wait1s>",
+    "sd0<return><wait1s>",
+    "whole<return><wait1s>",
+    "a<return><wait5s>",
+    "done<return><wait5s>",
+    "http<return><wait1s>",
+    "none<return><wait1s>",
+    "cdn.openbsd.org<return><wait1s>",
+    "<return><wait5s>",
+    "-g* -x*<return><wait1s>",
+    "done<return><wait90s>",
+    "<return><wait1s>",
+    "<return><wait30s>",
+    "reboot<return><wait60s>",
+    "root<return><wait1s>",
+    "root<return><wait1s>",
+    "cp /etc/examples/doas.conf /etc/<return><wait1s>",
+    "echo 'permit nopass :wheel as root' >> /etc/doas.conf<return><wait1s>",
+    "exit<return><wait1s>",
+  ]
+}
+
+build {
+  sources = ["sources.vmware-iso.openbsd-packer"]
+  # Upgrade the system to the latest patch level
+  provisioner "shell" {
+    expect_disconnect = "true"
+    inline = [
+      "doas syspatch",
+      "doas shutdown -r now",
+    ]
+  }
+  # After finishing the setup we copy the system log locally.
+  provisioner "file" {
+    pause_before     = "20s"
+    direction   = "download"
+    source      = "/var/log/messages"
+    destination = "./log/"
+  }
+  # After finishing the setup we copy the daemon log locally.
+  provisioner "file" {
+    direction   = "download"
+    source      = "/var/log/daemon"
+    destination = "./log/"
+  }
+  # We have to make sure that the doas rights of the user are restricted again.
+  provisioner "shell" {
+    inline = [
+      "doas sed -i 's|permit nopass :wheel as root|permit nopass :wheel as root cmd /sbin/shutdown|g' /etc/doas.conf"
+    ]
+  }
 }

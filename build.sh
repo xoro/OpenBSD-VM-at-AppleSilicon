@@ -69,7 +69,7 @@ printf "%s INFO:  ALL software prerequisites are available on this system.\n\n" 
 printf "###############################################################################\n"
 printf "# Cleanup the directories and files\n"
 printf "###############################################################################\n"
-rm -rf output-* tmp miniroot${OPENBSD_VERSION_SHORT}.vmdk empty.iso log/* &>/dev/null
+rm -rf output-* tmp *.vmdk empty.iso log/* &>/dev/null
 if [ "$?" != "0" ]; then
     printf "%s ERROR: Cleanup of directories and files did not succeed.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
     exit 9
@@ -77,47 +77,47 @@ fi
 printf "%s INFO:  The local directory has been cleaned up.\n\n" "$(date "+%Y-%m-%d %H:%M:%S")"
 
 printf "###############################################################################\n"
-printf "# Make sure the OpenBSD arm64 miniroot image is available locally\n"
+printf "# Make sure the OpenBSD arm64 install image is available locally\n"
 printf "###############################################################################\n"
-# Check if the miniroot72.img is available locally
-if [ ! -f miniroot${OPENBSD_VERSION_SHORT}.img ]; then
+# Check if the OpenBSD install image is available locally
+if [ ! -f install${OPENBSD_VERSION_SHORT}.img ]; then
     printf "%s INFO:  Downloading OpenBSD image file.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
-    curl --silent --remote-name https://cdn.openbsd.org/pub/OpenBSD/${OPENBSD_VERSION_LONG}/arm64/miniroot${OPENBSD_VERSION_SHORT}.img
+    curl --progress-bar --remote-name https://cdn.openbsd.org/pub/OpenBSD/${OPENBSD_VERSION_LONG}/arm64/install${OPENBSD_VERSION_SHORT}.img
     if [ "$?" != "0" ]; then
-        printf "%s ERROR: Downloading the OpenBSD arm64 miniroot image did not succeed.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
+        printf "%s ERROR: Downloading the OpenBSD arm64 install image did not succeed.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
         printf "%s ERROR: Make sure you are connected to the internet correctly and can download the following file:\n" "$(date "+%Y-%m-%d %H:%M:%S")"
-        printf "%s ERROR: https://cdn.openbsd.org/pub/OpenBSD/%s/arm64/miniroot%s.img\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${OPENBSD_VERSION_LONG}" "${OPENBSD_VERSION_SHORT}"
+        printf "%s ERROR: https://cdn.openbsd.org/pub/OpenBSD/%s/arm64/install%s.img\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${OPENBSD_VERSION_LONG}" "${OPENBSD_VERSION_SHORT}"
         exit 10
     fi
 fi
 # Check the sha256 checksum against the online availlable checksum at cdn.openbsd.org
-miniroot_sha256_locally="$(sha256sum miniroot72.img | cut -d " " -f 1)"
+install_sha256_locally="$(sha256sum install72.img | cut -d " " -f 1)"
 if [ "$?" != "0" ]; then
-    printf "%s ERROR: Checking the checksum of the local miniroot image did not succeed.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
+    printf "%s ERROR: Checking the checksum of the local install image did not succeed.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
     exit 11
 fi
-miniroot_sha256_online="$(curl --silent https://cdn.openbsd.org/pub/OpenBSD/${OPENBSD_VERSION_LONG}/arm64/SHA256 | grep miniroot72.img | cut -d " " -f 4)"
+install_sha256_online="$(curl --silent https://cdn.openbsd.org/pub/OpenBSD/${OPENBSD_VERSION_LONG}/arm64/SHA256 | grep install72.img | cut -d " " -f 4)"
 if [ "$?" != "0" ]; then
-    printf "%s ERROR: Downloading the checksum of the miniroot image did not succeed.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
+    printf "%s ERROR: Downloading the checksum of the install image did not succeed.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
     exit 12
 fi
-if [ "${miniroot_sha256_locally}" != "${miniroot_sha256_online}" ]; then
-    printf "%s ERROR: The sha256 checksum of the local \"miniroot%s.img\" is not correct.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${OPENBSD_VERSION_SHORT}"
-    printf "%s ERROR: It is supposed to be: %s.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${miniroot_sha256_online}"
+if [ "${install_sha256_locally}" != "${install_sha256_online}" ]; then
+    printf "%s ERROR: The sha256 checksum of the local \"install%s.img\" is not correct.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${OPENBSD_VERSION_SHORT}"
+    printf "%s ERROR: It is supposed to be: %s.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${install_sha256_online}"
     exit 13
     
 fi
-printf "%s INFO:  The sha256 checksum of the miniroot image is correct.\n\n" "$(date "+%Y-%m-%d %H:%M:%S")"
+printf "%s INFO:  The sha256 checksum of the install image is correct.\n\n" "$(date "+%Y-%m-%d %H:%M:%S")"
 
 printf "###############################################################################\n"
-printf "# Convert the current OpenBSD miniroot image to a vmdk file\n"
+printf "# Convert the current OpenBSD install image to a vmdk file\n"
 printf "###############################################################################\n"
-qemu-img convert miniroot${OPENBSD_VERSION_SHORT}.img -O vmdk miniroot${OPENBSD_VERSION_SHORT}.vmdk &>/dev/null
+qemu-img convert install${OPENBSD_VERSION_SHORT}.img -O vmdk install${OPENBSD_VERSION_SHORT}.vmdk &>/dev/null
 if [ "$?" != "0" ]; then
-    printf "%s ERROR: Coverting the OpenBSD miniroot image did not succeed.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
+    printf "%s ERROR: Coverting the OpenBSD install image did not succeed.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
     exit 14
 fi
-printf "%s INFO:  The OpenBSD miniroot image was successfully converted to a vmdk file.\n\n" "$(date "+%Y-%m-%d %H:%M:%S")"
+printf "%s INFO:  The OpenBSD install image was successfully converted to a vmdk file.\n\n" "$(date "+%Y-%m-%d %H:%M:%S")"
 
 printf "###############################################################################\n"
 printf "# Creating an empty (dummy) ISO image required by packer\n"
@@ -152,7 +152,7 @@ printf "########################################################################
 packer build \
     -force \
     -on-error=abort \
-    -var miniroot-img="$(pwd)"/miniroot${OPENBSD_VERSION_SHORT}.vmdk \
+    -var install-img="$(pwd)"/install${OPENBSD_VERSION_SHORT}.vmdk \
     build.pkr.hcl &>/dev/null
 if [ "$?" != "0" ]; then
     printf "%s ERROR: Building the OpenBSD VM did not succed.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
@@ -162,12 +162,12 @@ fi
 printf "%s INFO:  The OpenBSD VM was created successfully.\n\n" "$(date "+%Y-%m-%d %H:%M:%S")"
 
 printf "###############################################################################\n"
-printf "# Removing the OpenBSD miniroot installation image from the VM configuration\n"
+printf "# Removing the OpenBSD install installation image from the VM configuration\n"
 printf "###############################################################################\n"
 sed -i '' '/^nvme0:1/d' output-openbsd-packer/packer-openbsd-packer.vmx && \
 sed -i '' 's/bios.hddorder = "nvme0:1"/bios.hddorder = "nvme0:0"/g' output-openbsd-packer/packer-openbsd-packer.vmx
 if [ "$?" != "0" ]; then
-    printf "%s ERROR: Removing the OpenBSD miniroot installation image from the VM config did not succed.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
+    printf "%s ERROR: Removing the OpenBSD instal installation image from the VM config did not succed.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
     exit 18
 fi
 printf "%s INFO:  Great, creating an OpenBSD VMWare guest on Apple Silicon succeeded!!!.\n" "$(date "+%Y-%m-%d %H:%M:%S")"

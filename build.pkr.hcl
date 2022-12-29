@@ -8,7 +8,7 @@ packer {
   }
 }
 
-variable "miniroot-img" {
+variable "install-img" {
   type    = string
   default = ""
 }
@@ -31,17 +31,18 @@ source "vmware-iso" "openbsd-packer" {
   memory = "4096"
   disk_adapter_type = "nvme"
   disk_size = "64000"
-  network_adapter_type = "e1000e"
+  network_adapter_type = "vmxnet3"
   guest_os_type = "arm-other-64"
   vmx_data = {
+    # Nothing is working without EFI!!! ;-)
     "firmware" = "efi"
     # We need the USB stuff for packer to type text.
     "usb.present" = "TRUE"
     "ehci.present" = "TRUE"
     "usb_xhci.present" = "TRUE"
-    # We have to add the vmdk converted OpenBSD miniroot image file,
+    # We have to add the vmdk converted OpenBSD install image file,
     "nvme0.present" = "TRUE"
-    "nvme0:1.fileName" = "${var.miniroot-img}"
+    "nvme0:1.fileName" = "${var.install-img}"
     "nvme0:1.present" = "TRUE"
     # and make sure to boot from it.
     "bios.bootOrder" = "HDD"
@@ -50,11 +51,12 @@ source "vmware-iso" "openbsd-packer" {
     # because the download of the OpenBSD packages via NAT is extremely slow!!!
     "ethernet0.addresstype" = "static"
     "ethernet0.generatedaddressoffset" = "0"
+    "ethernet0.bsdname" = "en0" # en0 on MacBooks is usually the Wifi interface
     "ethernet0.connectiontype" = "custom"
-    "ethernet0.displayname" = "Wi-Fi" 
     "ethernet0.linkstatepropagation.enable" = "TRUE"
     "ethernet0.pcislotnumber" = "160"
     "ethernet0.present" = "TRUE"
+    "ethernet0.vnet" = "vmnet3"
     "ethernet0.wakeonpcktrcv" = "FALSE"
     "ethernet0.address" = "00:0C:29:49:A7:51"
   }
@@ -63,7 +65,7 @@ source "vmware-iso" "openbsd-packer" {
     "install<return><wait1s>",
     "openbsd-packer<return><wait1s>",
     "<return><wait1s>",
-    "autoconf<return><wait5s>",
+    "autoconf<return><wait10s>",
     "none<return><wait1s>",
     "done<return><wait1s>",
     "root<return><wait1s>",
@@ -80,12 +82,14 @@ source "vmware-iso" "openbsd-packer" {
     "whole<return><wait1s>",
     "a<return><wait5s>",
     "done<return><wait5s>",
-    "http<return><wait1s>",
-    "none<return><wait1s>",
-    "cdn.openbsd.org<return><wait1s>",
-    "<return><wait5s>",
+    "disk<return><wait1s>",
+    "no<return><wait1s>",
+    "sd1<return><wait1s>",
+    "a<return><wait1s>",
+    "<return><wait1s>",
     "-g* -x*<return><wait1s>",
-    "done<return><wait90s>",
+    "done<return><wait1s>",
+    "yes<return><wait30s>",
     "<return><wait1s>",
     "<return><wait30s>",
     "reboot<return><wait60s>",

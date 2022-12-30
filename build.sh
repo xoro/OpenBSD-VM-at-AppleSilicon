@@ -7,6 +7,7 @@ export PACKER_LOG_PATH="log/packer.log"
 openbsd_version_log="7.2"
 openbsd_version_short="$(echo "${openbsd_version_log}" | tr -d .)"
 max_tries_port_check="120"
+packer_config_file_name="openbsd-packer.pkr.hcl"
 # Variables passed to packer
 packer_ssh_host="openbsd-packer"
 openbsd_hostname="openbsd-packer"
@@ -88,7 +89,7 @@ then
     printf "%s ERROR: Please install qemu (brew install qemu).\n" "$(date "+%Y-%m-%d %H:%M:%S")"
     exit 6
 fi
-# Check if packer is installed (the packer version will be checked in the openbsd-packer.pkr.hcl script)
+# Check if packer is installed (the packer version will be checked in the pkr.hcl script)
 if ! which packer > /dev/null 2>&1;
 then
     printf "%s ERROR: packer is not available on this system.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
@@ -185,7 +186,7 @@ printf "%s INFO:  The dummy file empty.iso was successfully created.\n\n" "$(dat
 printf "################################################################################\n"
 printf "# Validating the packer configuration file\n"
 printf "################################################################################\n"
-if ! packer validate openbsd-packer.pkr.hcl;
+if ! packer validate "${packer_config_file_name}";
 then
     printf "%s ERROR: Validating the packer packer configuration file did not succed.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
     exit 17
@@ -195,7 +196,7 @@ printf "%s INFO:  The packer configuration was successfully validated.\n\n" "$(d
 printf "################################################################################\n"
 printf "# Initializing packer and get the required plugins\n"
 printf "################################################################################\n"
-if ! packer init openbsd-packer.pkr.hcl > /dev/null 2>&1;
+if ! packer init "${packer_config_file_name}" > /dev/null 2>&1;
 then
     printf "%s ERROR: Initializing packer did not succed.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
     exit 18
@@ -214,7 +215,7 @@ if ! packer build -force \
                   -var openbsd-username="${openbsd_username}" \
                   -var openbsd-excluded-sets="${openbsd_excluded_sets}" \
                   -var rc-firsttime-wait="${rc_firsttime_wait}" \
-                  openbsd-packer.pkr.hcl > /dev/null 2>&1;
+                  "${packer_config_file_name}" > /dev/null 2>&1;
 then
     printf "%s ERROR: Building the OpenBSD VM did not succed.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
     printf "%s ERROR: You can check the log file in the log directory.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
@@ -225,8 +226,8 @@ printf "%s INFO:  The OpenBSD VM was created successfully.\n\n" "$(date "+%Y-%m-
 printf "################################################################################\n"
 printf "# Removing the OpenBSD install installation image from the VM configuration\n"
 printf "################################################################################\n"
-if ! sed -i '' '/^nvme0:1/d' output-openbsd-packer/packer-openbsd-packer.vmx && \
-     sed -i '' 's/bios.hddorder = "nvme0:1"/bios.hddorder = "nvme0:0"/g' output-openbsd-packer/packer-openbsd-packer.vmx;
+if ! (sed -i '' '/^nvme0:1/d' output-*/*.vmx && \
+     sed -i '' 's/bios.hddorder = "nvme0:1"/bios.hddorder = "nvme0:0"/g' output-*/*.vmx);
 then
     printf "%s ERROR: Removing the OpenBSD instal installation image from the VM config did not succed.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
     exit 20

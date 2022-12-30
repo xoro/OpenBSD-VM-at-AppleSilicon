@@ -1,9 +1,11 @@
-= Running an OpenBSD VM using VMWare Fusion on Apple Silicon
+= Running an OpenBSD VM using VMWare Fusion on Apple silicon
 
 :Author:                         Timo Pallach
 :Email:                          timo@pallach.de
 :sectnums:
 :toc:
+
+This repository can be used to create a very basic OpenBSD (arm64) VM using VMWare Fusion on a MacOS Ventura (Apple silicon) host (should also work on Monterey).
 
 == Getting Started
 
@@ -55,6 +57,21 @@ tail -f log/packer.log
 
 View the build process via VNC. Just access vnc://127.0.0.1:5987
 
+Just type the following on the command line:
+
+[source,sh]
+[subs="verbatim,attributes"]
+----
+open vnc://127.0.0.1:5987
+----
+
+Now just leave the password empty and hit the "Sign In" button.
+
 == Start the created OpenVM
 
 After the build process finished successfully you can open and start the VM using VMWare Fusion (File->Open And Run...->OpenBSD-VM-at-AppleSilicon/output-openbsd-packer/packer-openbsd-packer.vmx).
+
+
+== Tips/Hints
+
+The section variables in the section "# Variables passed to packer" can be used to adopt the build and created VM to your needs.

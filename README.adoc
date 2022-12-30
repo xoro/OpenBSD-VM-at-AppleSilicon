@@ -67,7 +67,7 @@ open vnc://127.0.0.1:5987
 
 Now just leave the password empty and hit the "Sign In" button.
 
-== Start the created OpenVM
+== Start the created VM
 
 After the build process finished successfully you can open and start the VM using VMWare Fusion (File->Open And Run...->OpenBSD-VM-at-AppleSilicon/output-openbsd-packer/packer-openbsd-packer.vmx).
 

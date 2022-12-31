@@ -1,4 +1,5 @@
 #!/bin/sh
+# shellcheck disable=SC2009
 
 # Variables used by packer.
 export PACKER_LOG="1"
@@ -15,7 +16,28 @@ openbsd_username="user"
 openbsd_excluded_sets="-g* -x*"
 rc_firsttime_wait="60"
 
-# TODO: Make sure that there are no running vmware (vmware-vmx) instances from a previous run any more!!!
+printf "################################################################################\n"
+printf "# Checking if there is still a vmware-vmx process left over from the last run\n"
+printf "################################################################################\n"
+if (ps aux | grep vmware-vmx | grep packer);
+then
+    printf "%s INFO:  There is a still running process related to this script.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
+    printf "%s INFO:  Do want me to kill it [Y\\\\n]: " "$(date "+%Y-%m-%d %H:%M:%S")"
+    read -r answer
+    if [ "$answer" = "" ] || [ "$answer" = "Y" ] || [ "$answer" = "y" ];
+    then
+        if ! pkill vmware-vmx;
+        then
+            printf "%s ERROR: The vmware-vmx process could not be killed successfully.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
+            printf "%s ERROR: Please check this manually, kill it and than rerun this script again.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
+            exit 1
+        else
+            printf "%s INFO:  All vmware-vmx processes have been killed successfully.\n\n" "$(date "+%Y-%m-%d %H:%M:%S")"
+        fi
+    fi
+else
+    printf "%s INFO:  There is no running VMWare Fuiosn process related to this script.\n\n" "$(date "+%Y-%m-%d %H:%M:%S")"
+fi
 
 printf "################################################################################\n"
 printf "# Checking if no process is using the TCP port localhost:5987\n"

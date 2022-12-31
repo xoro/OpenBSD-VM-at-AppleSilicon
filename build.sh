@@ -25,7 +25,7 @@ printf "# Checking if there is still a vmware-vmx process left over from the las
 printf "################################################################################\n"
 if (ps aux | grep vmware-vmx | grep packer);
 then
-    printf "%b %bINFO:%b  There is a still running process related to this script.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_bold}" "${fmt_end}"
+    printf "%b %bINFO:%b  There is a still running vmware-vmx process related to this script.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_bold}" "${fmt_end}"
     printf "%b %bINFO:%b  Do want me to kill it [Y\\\\n]: " "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_bold}" "${fmt_end}"
     read -r answer
     if [ "$answer" = "" ] || [ "$answer" = "Y" ] || [ "$answer" = "y" ];

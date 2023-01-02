@@ -85,7 +85,7 @@ source "vmware-iso" "openbsd-packer" {
     "ethernet0.wakeonpcktrcv" = "FALSE"
     "ethernet0.address" = "00:0C:29:49:A7:51"
   }
-  boot_wait = "20s"
+  boot_wait = "25s"
   boot_command = [
     "install<return><wait2s>",
     "${var.openbsd-hostname}<return><wait2s>",

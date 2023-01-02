@@ -12,6 +12,10 @@ variable "packer-ssh-host" {
   type    = string
   default = "openbsd-packer"
 }
+variable "packer-vnc-port" {
+  type    = string
+  default = "5987"
+}
 variable "openbsd-install-img" {
   type    = string
   default = "install72.img"
@@ -40,8 +44,8 @@ source "vmware-iso" "openbsd-packer" {
   ssh_username = "user"
   ssh_password = "user"
   ssh_host = "${var.packer-ssh-host}"
-  vnc_port_min = "5987"
-  vnc_port_max = "5987"
+  vnc_port_min = "${var.packer-vnc-port}"
+  vnc_port_max = "${var.packer-vnc-port}"
   vnc_disable_password = "true"
   shutdown_command = "doas /sbin/shutdown -p now"
   keep_registered  = "false"

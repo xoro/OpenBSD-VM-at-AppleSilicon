@@ -14,12 +14,13 @@ openbsd_version_short="$(echo "${openbsd_version_log}" | tr -d .)"
 max_tries_port_check="120"
 packer_config_file_name="openbsd-packer.pkr.hcl"
 # Variables passed to packer
+packer_boot_wait="25"             # The time (in seconds) packer waits to proceed after the VM has been initially booted
 packer_ssh_host="openbsd-packer"  # Can be an IP address or a resolvable FQDN
 packer_vnc_port="5987"            # The VNC port packer will use for the vm configuration
 openbsd_hostname="openbsd-packer" # The hostname inside the VM
 openbsd_username="user"           # The user (and password) that is created during the installation process
 openbsd_excluded_sets="-g* -x*"   # The sets that can be selected/deselected
-rc_firsttime_wait="60"            # If you have a slow internet connection you can increase this time
+rc_firsttime_wait="80"            # If you have a slow internet connection you can increase this time (in seconds)
 
 printf "################################################################################\n"
 printf "# Checking if there is still a vmware-vmx process left over from the last run\n"
@@ -236,6 +237,7 @@ printf "# Follow the VM creation: vnc://127.0.0.1:%b\n" "${packer_vnc_port}"
 printf "################################################################################\n"
 if ! packer build -force \
                   -on-error=abort \
+                  -var packer-boot-wait="${packer_boot_wait}" \
                   -var packer-ssh-host="${packer_ssh_host}" \
                   -var packer-vnc-port="${packer_vnc_port}" \
                   -var openbsd-install-img="$(pwd)"/install"${openbsd_version_short}".vmdk \

@@ -125,6 +125,8 @@ source "vmware-iso" "openbsd-packer" {
     "root<return><wait2s>",
     "root<return><wait3s>",
     "cp /etc/examples/doas.conf /etc/<return><wait2s>",
+    # For an easier system update we allow the :wheel user to access all command without password.
+    # We will restrict this in the last builder step again.
     "echo 'permit nopass :wheel as root' >> /etc/doas.conf<return><wait2s>",
     "exit<return><wait2s>",
   ]

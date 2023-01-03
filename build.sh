@@ -9,8 +9,8 @@ export fmt_end="\e[0m"
 export PACKER_LOG="1"
 export PACKER_LOG_PATH="log/packer.log"
 # Variables used in this script
-openbsd_version_log="7.2"
-openbsd_version_short="$(echo "${openbsd_version_log}" | tr -d .)"
+openbsd_version_long="7.2"
+openbsd_version_short="$(echo "${openbsd_version_long}" | tr -d .)"
 max_tries_port_check="120"
 packer_config_file_name="openbsd-packer.pkr.hcl"
 # Variables passed to packer
@@ -163,11 +163,11 @@ if [ ! -f install"${openbsd_version_short}".img ]; then
     printf "%b %bINFO:%b  Downloading the OpenBSD image file.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_bold}" "${fmt_end}"
     if ! curl --progress-bar \
               --remote-name \
-              https://cdn.openbsd.org/pub/OpenBSD/"${openbsd_version_log}"/arm64/install"${openbsd_version_short}".img;
+              https://cdn.openbsd.org/pub/OpenBSD/"${openbsd_version_long}"/arm64/install"${openbsd_version_short}".img;
     then
         printf "%b %bERROR:%b Downloading the OpenBSD arm64 install image did not succeed.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_red_bold}" "${fmt_end}"
         printf "%b %bERROR:%b Make sure you are connected to the internet correctly and can download the following file:\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_red_bold}" "${fmt_end}"
-        printf "%b %bERROR:%b https://cdn.openbsd.org/pub/OpenBSD/%b/arm64/install%b.img\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_red_bold}" "${fmt_end}" "${openbsd_version_log}" "${openbsd_version_short}"
+        printf "%b %bERROR:%b https://cdn.openbsd.org/pub/OpenBSD/%b/arm64/install%b.img\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_red_bold}" "${fmt_end}" "${openbsd_version_long}" "${openbsd_version_short}"
         exit 11
     fi
 fi
@@ -177,7 +177,7 @@ then
     printf "%b %bERROR:%b Checking the checksum of the local install image did not succeed.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_red_bold}" "${fmt_end}"
     exit 12
 fi
-if ! install_sha256_online="$(curl --silent https://cdn.openbsd.org/pub/OpenBSD/${openbsd_version_log}/arm64/SHA256 | grep install72.img | cut -d " " -f 4)";
+if ! install_sha256_online="$(curl --silent https://cdn.openbsd.org/pub/OpenBSD/${openbsd_version_long}/arm64/SHA256 | grep install72.img | cut -d " " -f 4)";
 then
     printf "%b %bERROR:%b Downloading the checksum of the install image did not succeed.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_red_bold}" "${fmt_end}"
     exit 13

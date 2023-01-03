@@ -25,10 +25,10 @@ rc_firsttime_wait="80"            # If you have a slow internet connection you c
 printf "################################################################################\n"
 printf "# Checking if there is still a vmware-vmx process left over from the last run\n"
 printf "################################################################################\n"
-if (ps aux | grep vmware-vmx | grep packer);
+if (ps aux | grep "vmware-vmx" | grep "VMware Fusion.app");
 then
-    printf "%b %bINFO:%b  There is a still running vmware-vmx process related to this script.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_bold}" "${fmt_end}"
-    printf "%b %bINFO:%b  Do want me to kill it [Y\\\\n]: " "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_bold}" "${fmt_end}"
+    printf "%b %bINFO:%b  There are still running vmware-vmx processes.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_bold}" "${fmt_end}"
+    printf "%b %bINFO:%b  Do want me to kill it/them [Y\\\\n]: " "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_bold}" "${fmt_end}"
     read -r answer
     if [ "$answer" = "" ] || [ "$answer" = "Y" ] || [ "$answer" = "y" ];
     then
@@ -153,7 +153,7 @@ then
     printf "%b %bERROR:%b Cleanup of directories and files did not succeed.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_red_bold}" "${fmt_end}"
     exit 10
 fi
-printf "%b %bINFO:%b  The local directory has been cleaned up.\n\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_bold}" "${fmt_end}"
+printf "%b %bINFO:%b  The local directories have been cleaned up.\n\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_bold}" "${fmt_end}"
 
 printf "################################################################################\n"
 printf "# Make sure the OpenBSD arm64 install image is available locally\n"

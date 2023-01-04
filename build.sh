@@ -172,12 +172,12 @@ if [ ! -f install"${openbsd_version_short}".img ]; then
     fi
 fi
 # Check the sha256 checksum against the online availlable checksum at cdn.openbsd.org
-if ! install_sha256_locally="$(sha256sum install72.img | cut -d " " -f 1)";
+if ! install_sha256_locally="$(sha256sum "install${openbsd_version_short}.img" | cut -d " " -f 1)";
 then
     printf "%b %bERROR:%b Checking the checksum of the local install image did not succeed.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_red_bold}" "${fmt_end}"
     exit 12
 fi
-if ! install_sha256_online="$(curl --silent https://cdn.openbsd.org/pub/OpenBSD/${openbsd_version_long}/arm64/SHA256 | grep install72.img | cut -d " " -f 4)";
+if ! install_sha256_online="$(curl --silent https://cdn.openbsd.org/pub/OpenBSD/${openbsd_version_long}/arm64/SHA256 | grep "install${openbsd_version_short}.img" | cut -d " " -f 4)";
 then
     printf "%b %bERROR:%b Downloading the checksum of the install image did not succeed.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_red_bold}" "${fmt_end}"
     exit 13

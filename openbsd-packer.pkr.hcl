@@ -60,6 +60,7 @@ source "vmware-iso" "openbsd-packer" {
   memory = "4096"
   disk_adapter_type = "nvme"
   disk_size = "65535"
+  disk_type_id = "0"
   network_adapter_type = "e1000e"
   usb = "true"
   guest_os_type = "arm-other-64"

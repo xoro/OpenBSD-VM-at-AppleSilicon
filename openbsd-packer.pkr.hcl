@@ -20,6 +20,10 @@ variable "packer-vnc-port" {
   type    = string
   default = "5987"
 }
+variable "use-openbsd-snapshot" {
+  type    = bool
+  default = "false"
+}
 variable "openbsd-install-img" {
   type    = string
   default = "install72.img"
@@ -42,53 +46,53 @@ variable "rc-firsttime-wait" {
 }
 
 source "vmware-iso" "openbsd-packer" {
-  version = "20"
-  iso_url = "./empty.iso"
-  iso_checksum = "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-  ssh_username = "user"
-  ssh_password = "user"
-  ssh_host = "${var.packer-ssh-host}"
-  vnc_port_min = "${var.packer-vnc-port}"
-  vnc_port_max = "${var.packer-vnc-port}"
+  version              = "20"
+  iso_url              = "./empty.iso"
+  iso_checksum         = "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  ssh_username         = "user"
+  ssh_password         = "user"
+  ssh_host             = "${var.packer-ssh-host}"
+  vnc_port_min         = "${var.packer-vnc-port}"
+  vnc_port_max         = "${var.packer-vnc-port}"
   vnc_disable_password = "true"
-  shutdown_command = "doas /sbin/shutdown -p now"
-  keep_registered  = "false"
-  skip_export = "false"
-  headless = "true"
-  format = "vmx"
-  cpus = "4"
-  memory = "4096"
-  disk_adapter_type = "nvme"
-  disk_size = "65535"
-  disk_type_id = "0"
+  shutdown_command     = "doas /sbin/shutdown -p now"
+  keep_registered      = "false"
+  skip_export          = "false"
+  headless             = "true"
+  format               = "vmx"
+  cpus                 = "4"
+  memory               = "4096"
+  disk_adapter_type    = "nvme"
+  disk_size            = "65535"
+  disk_type_id         = "0"
   network_adapter_type = "e1000e"
-  usb = "true"
-  guest_os_type = "arm-other-64"
+  usb                  = "true"
+  guest_os_type        = "arm-other-64"
   vmx_data = {
     # Nothing is working without EFI!!! ;-)
-    "firmware" = "efi"
+    "firmware"     = "efi"
     "architecture" = "arm-other-64"
     # We need the USB stuff for packer to type text.
     "usb_xhci.present" = "TRUE"
     # We have to add the vmdk converted OpenBSD install image file,
-    "nvme0.present" = "TRUE"
+    "nvme0.present"    = "TRUE"
     "nvme0:1.fileName" = "${var.openbsd-install-img}"
-    "nvme0:1.present" = "TRUE"
+    "nvme0:1.present"  = "TRUE"
     # and make sure to boot from it.
     "bios.bootOrder" = "HDD"
-    "bios.hddOrder" = "nvme0:1"
+    "bios.hddOrder"  = "nvme0:1"
     # We are using a custom bridge network config,
     # because the download of the OpenBSD packages via NAT is extremely slow!!!
-    "ethernet0.addresstype" = "static"
-    "ethernet0.generatedaddressoffset" = "0"
-    "ethernet0.bsdname" = "en0" # en0 on MacBooks is usually the Wifi interface
-    "ethernet0.connectiontype" = "custom"
+    "ethernet0.addresstype"                 = "static"
+    "ethernet0.generatedaddressoffset"      = "0"
+    "ethernet0.bsdname"                     = "en0" # en0 on MacBooks is usually the Wifi interface
+    "ethernet0.connectiontype"              = "custom"
     "ethernet0.linkstatepropagation.enable" = "TRUE"
-    "ethernet0.pcislotnumber" = "160"
-    "ethernet0.present" = "TRUE"
-    "ethernet0.vnet" = "vmnet3"
-    "ethernet0.wakeonpcktrcv" = "FALSE"
-    "ethernet0.address" = "00:0C:29:49:A7:51"
+    "ethernet0.pcislotnumber"               = "160"
+    "ethernet0.present"                     = "TRUE"
+    "ethernet0.vnet"                        = "vmnet3"
+    "ethernet0.wakeonpcktrcv"               = "FALSE"
+    "ethernet0.address"                     = "00:0C:29:49:A7:51"
   }
   boot_wait = "${var.packer-boot-wait}s"
   boot_command = [
@@ -138,17 +142,18 @@ build {
   # Upgrade the system to the latest patch level
   provisioner "shell" {
     expect_disconnect = "true"
-    inline = [
-      "doas syspatch",
-      "doas shutdown -r now",
-    ]
+    inline = concat(
+      # Only execute the syspatch if we are not using the OpenBSD snapshot.
+      [for command in ["doas syspatch"] : command if !var.use-openbsd-snapshot],
+      ["doas shutdown -r now"]
+    )
   }
   # After finishing the setup we copy the system log locally.
   provisioner "file" {
-    pause_before     = "10s"
-    direction   = "download"
-    source      = "/var/log/messages"
-    destination = "./log/"
+    pause_before = "10s"
+    direction    = "download"
+    source       = "/var/log/messages"
+    destination  = "./log/"
   }
   # After finishing the setup we copy the daemon log locally.
   provisioner "file" {

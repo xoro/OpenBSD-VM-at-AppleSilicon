@@ -11,6 +11,7 @@ export PACKER_LOG_PATH="log/packer.log"
 # Variables used in this script
 openbsd_version_long="7.2"
 openbsd_version_short="$(echo "${openbsd_version_long}" | tr -d .)"
+use_openbsd_snapshot="false" # If you use the latest development snapshot make sure to set the version to the current released verison number.
 max_tries_port_check="120"
 packer_config_file_name="openbsd-packer.pkr.hcl"
 # Variables passed to packer
@@ -22,13 +23,72 @@ openbsd_username="user"           # The user (and password) that is created duri
 openbsd_excluded_sets="-g* -x*"   # The sets that can be selected/deselected
 rc_firsttime_wait="80"            # If you have a slow internet connection you can increase this time (in seconds)
 
+check_openbsd_install_image ()
+{
+    # We check if the user wants to use the latest development snapshot
+    if [ "${use_openbsd_snapshot}" = "true" ];
+    then
+        url_path="snapshots"
+    else
+        url_path="${openbsd_version_long}"
+    fi
+    # Check if the OpenBSD install image is available locally
+    if [ ! -f install"${openbsd_version_short}".img ];
+    then
+        printf "%b %bINFO:%b  Downloading the OpenBSD image file.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_bold}" "${fmt_end}"
+        if ! curl --progress-bar \
+                  --remote-name \
+                  https://cdn.openbsd.org/pub/OpenBSD/"${url_path}"/arm64/install"${openbsd_version_short}".img;
+        then
+            printf "%b %bERROR:%b Downloading the OpenBSD arm64 install image did not succeed.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_red_bold}" "${fmt_end}"
+            printf "%b %bERROR:%b Make sure you are connected to the internet correctly and can download the following file:\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_red_bold}" "${fmt_end}"
+            printf "%b %bERROR:%b https://cdn.openbsd.org/pub/OpenBSD/%b/arm64/install%b.img\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_red_bold}" "${fmt_end}" "${openbsd_version_long}" "${openbsd_version_short}"
+            exit 11
+        fi
+    fi
+    # Check the sha256 checksum against the online availlable checksum at cdn.openbsd.org
+    if ! install_sha256_locally="$(sha256sum "install${openbsd_version_short}.img" | cut -d " " -f 1)";
+    then
+        printf "%b %bERROR:%b Checking the checksum of the local install image did not succeed.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_red_bold}" "${fmt_end}"
+        exit 12
+    fi
+    if ! install_sha256_online="$(curl --silent https://cdn.openbsd.org/pub/OpenBSD/${url_path}/arm64/SHA256 | grep "install${openbsd_version_short}.img" | cut -d " " -f 4)";
+    then
+        printf "%b %bERROR:%b Downloading the checksum of the install image did not succeed.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_red_bold}" "${fmt_end}"
+        exit 13
+    fi
+    if [ "${install_sha256_locally}" != "${install_sha256_online}" ]; then
+        printf "%b %bERROR:%b The sha256 checksum of the local \"install%b.img\" is not correct.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_red_bold}" "${fmt_end}" "${openbsd_version_short}" 
+        printf "%b %bERROR:%b It is supposed to be: %b.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_red_bold}" "${fmt_end}" "${install_sha256_online}"
+        printf "%b %bERROR:%b Do you want me to delete the local install img file? [Y\\\\n]: " "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_red_bold}" "${fmt_end}"
+        read -r answer
+        if [ "$answer" = "" ] || [ "$answer" = "Y" ] || [ "$answer" = "y" ];
+        then
+            if ! rm -rf install*.img;
+            then
+                printf "%b %bERROR:%b The install img file could not be deleted.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_red_bold}" "${fmt_end}"
+                printf "%b %bERROR:%b Please try to delete it manually.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_red_bold}" "${fmt_end}"
+                exit 14
+            else
+                printf "%b %bINFO:%b  The install img file was deleted successfully.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_bold}" "${fmt_end}"
+                return 1
+            fi
+        else
+            printf "%b %bWARNIG%b  Please try to delete it manually and restart the build again.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_red_bold}" "${fmt_end}"
+            exit 16
+        fi
+    fi
+    printf "%b %bINFO:%b  The sha256 checksum of the install image is correct.\n\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_bold}" "${fmt_end}"
+    return 0
+}
+
 printf "################################################################################\n"
 printf "# Checking if there is still a vmware-vmx process left over from the last run\n"
 printf "################################################################################\n"
 if (ps aux | grep "vmware-vmx" | grep "VMware Fusion.app");
 then
     printf "%b %bINFO:%b  There are still running vmware-vmx processes.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_bold}" "${fmt_end}"
-    printf "%b %bINFO:%b  Do want me to kill it/them [Y\\\\n]: " "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_bold}" "${fmt_end}"
+    printf "%b %bINFO:%b  Do want me to kill it/them? [Y\\\\n]: " "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_bold}" "${fmt_end}"
     read -r answer
     if [ "$answer" = "" ] || [ "$answer" = "Y" ] || [ "$answer" = "y" ];
     then
@@ -158,37 +218,10 @@ printf "%b %bINFO:%b  The local directories have been cleaned up.\n\n" "$(date "
 printf "################################################################################\n"
 printf "# Make sure the OpenBSD arm64 install image is available locally\n"
 printf "################################################################################\n"
-# Check if the OpenBSD install image is available locally
-if [ ! -f install"${openbsd_version_short}".img ]; then
-    printf "%b %bINFO:%b  Downloading the OpenBSD image file.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_bold}" "${fmt_end}"
-    if ! curl --progress-bar \
-              --remote-name \
-              https://cdn.openbsd.org/pub/OpenBSD/"${openbsd_version_long}"/arm64/install"${openbsd_version_short}".img;
-    then
-        printf "%b %bERROR:%b Downloading the OpenBSD arm64 install image did not succeed.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_red_bold}" "${fmt_end}"
-        printf "%b %bERROR:%b Make sure you are connected to the internet correctly and can download the following file:\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_red_bold}" "${fmt_end}"
-        printf "%b %bERROR:%b https://cdn.openbsd.org/pub/OpenBSD/%b/arm64/install%b.img\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_red_bold}" "${fmt_end}" "${openbsd_version_long}" "${openbsd_version_short}"
-        exit 11
-    fi
-fi
-# Check the sha256 checksum against the online availlable checksum at cdn.openbsd.org
-if ! install_sha256_locally="$(sha256sum "install${openbsd_version_short}.img" | cut -d " " -f 1)";
+if ! check_openbsd_install_image;
 then
-    printf "%b %bERROR:%b Checking the checksum of the local install image did not succeed.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_red_bold}" "${fmt_end}"
-    exit 12
+    check_openbsd_install_image
 fi
-if ! install_sha256_online="$(curl --silent https://cdn.openbsd.org/pub/OpenBSD/${openbsd_version_long}/arm64/SHA256 | grep "install${openbsd_version_short}.img" | cut -d " " -f 4)";
-then
-    printf "%b %bERROR:%b Downloading the checksum of the install image did not succeed.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_red_bold}" "${fmt_end}"
-    exit 13
-fi
-if [ "${install_sha256_locally}" != "${install_sha256_online}" ]; then
-    printf "%b %bERROR:%b The sha256 checksum of the local \"install%b.img\" is not correct.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${openbsd_version_short}" "${fmt_red_bold}" "${fmt_end}"
-    printf "%b %bERROR:%b It is supposed to be: %b.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_red_bold}" "${fmt_end}" "${install_sha256_online}"
-    exit 14
-    
-fi
-printf "%b %bINFO:%b  The sha256 checksum of the install image is correct.\n\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_bold}" "${fmt_end}"
 
 printf "################################################################################\n"
 printf "# Convert the current OpenBSD install image to a vmdk file\n"
@@ -196,7 +229,7 @@ printf "########################################################################
 if ! qemu-img convert install"${openbsd_version_short}".img -O vmdk install"${openbsd_version_short}".vmdk > /dev/null 2>&1;
 then
     printf "%b %bERROR:%b Coverting the OpenBSD install image did not succeed.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_red_bold}" "${fmt_end}"
-    exit 15
+    exit 17
 fi
 printf "%b %bINFO:%b  The OpenBSD install image was successfully converted to a vmdk file.\n\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_bold}" "${fmt_end}"
 
@@ -207,7 +240,7 @@ printf "########################################################################
 if ! (touch tmp && dd if=tmp of=empty.iso && rm -rf tmp) > /dev/null 2>&1;
 then
     printf "%b %bERROR:%b Creating an empty ISO file did not succeed.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_red_bold}" "${fmt_end}"
-    exit 16
+    exit 18
 fi
 printf "%b %bINFO:%b  The dummy file empty.iso was successfully created.\n\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_bold}" "${fmt_end}"
 
@@ -217,7 +250,7 @@ printf "########################################################################
 if ! packer validate "${packer_config_file_name}";
 then
     printf "%b %bERROR:%b Validating the packer packer configuration file did not succed.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_red_bold}" "${fmt_end}"
-    exit 17
+    exit 19
 fi
 printf "%b %bINFO:%b  The packer configuration was successfully validated.\n\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_bold}" "${fmt_end}"
 
@@ -227,7 +260,7 @@ printf "########################################################################
 if ! packer init "${packer_config_file_name}" > /dev/null 2>&1;
 then
     printf "%b %bERROR:%b Initializing packer did not succed.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_red_bold}" "${fmt_end}"
-    exit 18
+    exit 20
 fi
 printf "%b %bINFO:%b  packer was successfully initialized.\n\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_bold}" "${fmt_end}"
 
@@ -240,6 +273,7 @@ if ! packer build -force \
                   -var packer-boot-wait="${packer_boot_wait}" \
                   -var packer-ssh-host="${packer_ssh_host}" \
                   -var packer-vnc-port="${packer_vnc_port}" \
+                  -var use-openbsd-snapshot="${use_openbsd_snapshot}" \
                   -var openbsd-install-img="$(pwd)"/install"${openbsd_version_short}".vmdk \
                   -var openbsd-hostname="${openbsd_hostname}" \
                   -var openbsd-username="${openbsd_username}" \
@@ -249,7 +283,7 @@ if ! packer build -force \
 then
     printf "%b %bERROR:%b Building the OpenBSD VM did not succed.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_red_bold}" "${fmt_end}"
     printf "%b %bERROR:%b You can check the log file in the log directory.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_red_bold}" "${fmt_end}"
-    exit 19
+    exit 21
 fi
 printf "%b %bINFO:%b  The OpenBSD VM was created successfully.\n\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_bold}" "${fmt_end}"
 
@@ -260,7 +294,7 @@ if ! (sed -i '' '/^nvme0:1/d' output-*/*.vmx && \
      sed -i '' 's/bios.hddorder = "nvme0:1"/bios.hddorder = "nvme0:0"/g' output-*/*.vmx);
 then
     printf "%b %bERROR:%b Removing the OpenBSD instal installation image from the VM config did not succed.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_red_bold}" "${fmt_end}"
-    exit 20
+    exit 22
 fi
 printf "%b %bINFO:%b  Great, creating an OpenBSD VMWare guest on Apple Silicon succeeded!!!.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_bold}" "${fmt_end}"
 printf "%b %bINFO:%b  Just open the VMX file located in the output directory using VMWare Fusion and have fun running a virtualized OpenBSD on top of Apple Silicon. ;-)\n\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_bold}" "${fmt_end}"

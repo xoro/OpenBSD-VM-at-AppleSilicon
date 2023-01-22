@@ -42,7 +42,7 @@ variable "openbsd-excluded-sets" {
 }
 variable "rc-firsttime-wait" {
   type    = string
-  default = "60"
+  default = "100"
 }
 
 source "vmware-iso" "openbsd-packer" {
@@ -60,7 +60,7 @@ source "vmware-iso" "openbsd-packer" {
   skip_export          = "false"
   headless             = "true"
   format               = "vmx"
-  cpus                 = "4"
+  cpus                 = "8"
   memory               = "4096"
   disk_adapter_type    = "nvme"
   disk_size            = "65535"

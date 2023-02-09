@@ -97,6 +97,7 @@ source "vmware-iso" "openbsd-packer" {
   boot_wait = "${var.packer-boot-wait}s"
   boot_command = [
     "install<return><wait2s>",
+    "us<return><wait2s>",
     "${var.openbsd-hostname}<return><wait2s>",
     "<return><wait2s>",
     "autoconf<return><wait5s>",

@@ -12,7 +12,7 @@ export PACKER_LOG_PATH="log/packer.log"
 # Variables used in this script
 openbsd_version_long="7.2"
 openbsd_version_short="$(echo "${openbsd_version_long}" | tr -d .)"
-use_openbsd_snapshot="false" # If you use the latest development snapshot make sure to set the version to the current released verison number.
+use_openbsd_snapshot="true" # If you use the latest development snapshot make sure to set the version to the current released verison number.
 max_tries_port_check="120"
 packer_config_file_name="openbsd-packer.pkr.hcl"
 # Variables passed to packer

@@ -55,7 +55,6 @@ source "vmware-iso" "openbsd-packer" {
   iso_checksum         = "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
   ssh_username         = "user"
   ssh_password         = "user"
-  ssh_host             = "${var.packer-ssh-host}"
   vnc_port_min         = "${var.packer-vnc-port}"
   vnc_port_max         = "${var.packer-vnc-port}"
   vnc_disable_password = "true"
@@ -85,18 +84,6 @@ source "vmware-iso" "openbsd-packer" {
     # and make sure to boot from it.
     "bios.bootOrder" = "HDD"
     "bios.hddOrder"  = "nvme0:1"
-    # We are using a custom bridge network config,
-    # because the download of the OpenBSD packages via NAT is extremely slow!!!
-    "ethernet0.addresstype"                 = "static"
-    "ethernet0.generatedaddressoffset"      = "0"
-    "ethernet0.bsdname"                     = "${var.packer-egress-interface}"
-    "ethernet0.connectiontype"              = "custom"
-    "ethernet0.linkstatepropagation.enable" = "TRUE"
-    "ethernet0.pcislotnumber"               = "160"
-    "ethernet0.present"                     = "TRUE"
-    "ethernet0.vnet"                        = "vmnet3"
-    "ethernet0.wakeonpcktrcv"               = "FALSE"
-    "ethernet0.address"                     = "00:0C:29:49:A7:51"
   }
   boot_wait = "${var.packer-boot-wait}s"
   boot_command = [

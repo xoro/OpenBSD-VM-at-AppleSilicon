@@ -20,6 +20,10 @@ variable "packer-vnc-port" {
   type    = string
   default = "5987"
 }
+variable "packer-egress-interface" {
+  type    = string
+  default = "en0"
+}
 variable "use-openbsd-snapshot" {
   type    = bool
   default = "false"
@@ -85,7 +89,7 @@ source "vmware-iso" "openbsd-packer" {
     # because the download of the OpenBSD packages via NAT is extremely slow!!!
     "ethernet0.addresstype"                 = "static"
     "ethernet0.generatedaddressoffset"      = "0"
-    "ethernet0.bsdname"                     = "en0" # en0 on MacBooks is usually the Wifi interface
+    "ethernet0.bsdname"                     = "${var.packer-egress-interface}"
     "ethernet0.connectiontype"              = "custom"
     "ethernet0.linkstatepropagation.enable" = "TRUE"
     "ethernet0.pcislotnumber"               = "160"

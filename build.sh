@@ -18,6 +18,7 @@ packer_config_file_name="openbsd-packer.pkr.hcl"
 # Variables passed to packer
 packer_boot_wait="25"             # The time (in seconds) packer waits to proceed after the VM has been initially booted
 packer_ssh_host="openbsd-packer"  # Can be an IP address or a resolvable FQDN
+packer_egress_interface="$(netstat -r -f inet | grep default | cut -w -f 4)"
 #packer_ssh_host="192.168.254.142"  # Can be an IP address or a resolvable FQDN
 packer_vnc_port="5987"            # The VNC port packer will use for the vm configuration
 openbsd_hostname="openbsd-packer" # The hostname inside the VM
@@ -312,6 +313,7 @@ if ! packer build -force \
                   -var packer-boot-wait="${packer_boot_wait}" \
                   -var packer-ssh-host="${packer_ssh_host}" \
                   -var packer-vnc-port="${packer_vnc_port}" \
+                  -var packer-egress-interface="${packer_egress_interface}" \
                   -var use-openbsd-snapshot="${use_openbsd_snapshot}" \
                   -var openbsd-install-img="$(pwd)"/install"${openbsd_version_short}".vmdk \
                   -var openbsd-hostname="${openbsd_hostname}" \

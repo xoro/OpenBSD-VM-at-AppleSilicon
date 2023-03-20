@@ -12,18 +12,6 @@ variable "packer-boot-wait" {
   type    = string
   default = "25"
 }
-variable "packer-ssh-host" {
-  type    = string
-  default = "openbsd-packer"
-}
-variable "packer-vnc-port" {
-  type    = string
-  default = "5987"
-}
-variable "packer-egress-interface" {
-  type    = string
-  default = "en0"
-}
 variable "use-openbsd-snapshot" {
   type    = bool
   default = "false"
@@ -42,7 +30,7 @@ variable "openbsd-username" {
 }
 variable "openbsd-excluded-sets" {
   type    = string
-  default = "-g* -x*"
+  default = "-g* -m* -x*"
 }
 variable "rc-firsttime-wait" {
   type    = string

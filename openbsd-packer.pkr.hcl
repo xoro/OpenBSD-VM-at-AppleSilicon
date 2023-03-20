@@ -43,8 +43,6 @@ source "vmware-iso" "openbsd-packer" {
   iso_checksum         = "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
   ssh_username         = "user"
   ssh_password         = "user"
-  vnc_port_min         = "${var.packer-vnc-port}"
-  vnc_port_max         = "${var.packer-vnc-port}"
   vnc_disable_password = "true"
   shutdown_command     = "doas /sbin/shutdown -p now"
   keep_registered      = "false"

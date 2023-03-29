@@ -250,7 +250,7 @@ printf "# Validating the packer configuration file\n"
 printf "################################################################################\n"
 if ! packer validate "${packer_config_file_name}"
 then
-    printf "%b %bERROR:%b Validating the packer packer configuration file did not succed.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_red_bold}" "${fmt_end}"
+    printf "%b %bERROR:%b Validating the packer packer configuration file did not succeed.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_red_bold}" "${fmt_end}"
     exit 16
 fi
 printf "%b %bINFO:%b  The packer configuration was successfully validated.\n\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_bold}" "${fmt_end}"
@@ -260,7 +260,7 @@ printf "# Initializing packer and get the required plugins\n"
 printf "################################################################################\n"
 if ! packer init "${packer_config_file_name}" > /dev/null 2>&1
 then
-    printf "%b %bERROR:%b Initializing packer did not succed.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_red_bold}" "${fmt_end}"
+    printf "%b %bERROR:%b Initializing packer did not succeed.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_red_bold}" "${fmt_end}"
     exit 17
 fi
 printf "%b %bINFO:%b  packer was successfully initialized.\n\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_bold}" "${fmt_end}"
@@ -279,7 +279,7 @@ if ! packer build -force \
                   -var rc-firsttime-wait="${rc_firsttime_wait}" \
                   "${packer_config_file_name}"
 then
-    printf "%b %bERROR:%b Building the OpenBSD VM did not succed.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_red_bold}" "${fmt_end}"
+    printf "%b %bERROR:%b Building the OpenBSD VM did not succeed.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_red_bold}" "${fmt_end}"
     printf "%b %bERROR:%b You can check the log file in the log directory.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_red_bold}" "${fmt_end}"
     exit 18
 fi
@@ -291,7 +291,7 @@ printf "########################################################################
 if ! (sed -i '' '/^nvme0:1/d' output-*/*.vmx && \
      sed -i '' 's/bios.hddorder = "nvme0:1"/bios.hddorder = "nvme0:0"/g' output-*/*.vmx)
 then
-    printf "%b %bERROR:%b Removing the OpenBSD instal installation image from the VM config did not succed.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_red_bold}" "${fmt_end}"
+    printf "%b %bERROR:%b Removing the OpenBSD instal installation image from the VM config did not succeed.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_red_bold}" "${fmt_end}"
     exit 19
 fi
 printf "%b %bINFO:%b  Great, creating an OpenBSD VMWare guest on Apple Silicon succeeded!!!.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_bold}" "${fmt_end}"

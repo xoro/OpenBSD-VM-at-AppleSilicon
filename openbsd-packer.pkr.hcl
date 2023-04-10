@@ -12,21 +12,21 @@ variable "packer-boot-wait" {
   type    = string
   default = "25"
 }
+variable "openbsd-version" {
+  type    = string
+  default = "7.3"
+}
 variable "use-openbsd-snapshot" {
   type    = bool
   default = "false"
 }
 variable "openbsd-install-img" {
   type    = string
-  default = "install72.img"
+  default = "install73.img"
 }
 variable "openbsd-hostname" {
   type    = string
   default = "openbsd-packer"
-}
-variable "openbsd-username" {
-  type    = string
-  default = "user"
 }
 variable "openbsd-excluded-sets" {
   type    = string
@@ -41,10 +41,10 @@ source "vmware-iso" "openbsd-packer" {
   version              = "20"
   iso_url              = "./empty.iso"
   iso_checksum         = "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-  ssh_username         = "user"
-  ssh_password         = "user"
+  ssh_username         = "root"
+  ssh_password         = "root"
   vnc_disable_password = "true"
-  shutdown_command     = "doas /sbin/shutdown -p now"
+  shutdown_command     = "halt -p"
   keep_registered      = "false"
   skip_export          = "false"
   headless             = "true"
@@ -65,7 +65,7 @@ source "vmware-iso" "openbsd-packer" {
     "usb_xhci.present" = "TRUE"
     # We have to add the vmdk converted OpenBSD install image file,
     "nvme0.present"    = "TRUE"
-    "nvme0:1.fileName" = "${var.openbsd-install-img}"
+    "nvme0:1.fileName" = format("%s/install%s.vmdk", "${path.cwd}", replace("${var.openbsd-version}", ".", ""))
     "nvme0:1.present"  = "TRUE"
     # and make sure to boot from it.
     "bios.bootOrder" = "HDD"
@@ -83,12 +83,10 @@ source "vmware-iso" "openbsd-packer" {
     "root<return><wait2s>",
     "root<return><wait2s>",
     "yes<return><wait2s>",
-    "${var.openbsd-username}<return><wait2s>",
-    "${var.openbsd-username}<return><wait2s>",
-    "${var.openbsd-username}<return><wait2s>",
-    "${var.openbsd-username}<return><wait2s>",
     "no<return><wait2s>",
+    "yes<return><wait2s>",
     "<return><wait2s>",
+    "no<return><wait2s>",
     "?<return><wait2s>",
     "sd0<return><wait2s>",
     "whole<return><wait2s>",
@@ -107,10 +105,6 @@ source "vmware-iso" "openbsd-packer" {
     "reboot<return><wait${var.rc-firsttime-wait}s>",
     "root<return><wait2s>",
     "root<return><wait3s>",
-    "cp /etc/examples/doas.conf /etc/<return><wait2s>",
-    # For an easier system update we allow the :wheel user to access all command without password.
-    # We will restrict this in the last builder step again.
-    "echo 'permit nopass :wheel as root' >> /etc/doas.conf<return><wait2s>",
     "exit<return><wait2s>",
   ]
 }
@@ -122,8 +116,8 @@ build {
     expect_disconnect = "true"
     inline = concat(
       # Only execute the syspatch if we are not using the OpenBSD snapshot.
-      [for command in ["doas syspatch"] : command if !var.use-openbsd-snapshot],
-      ["doas shutdown -r now"]
+      ["${var.use-openbsd-snapshot}" == true ? "" : "syspatch"],
+      ["shutdown -r now"]
     )
   }
   # After finishing the setup we copy the system log locally.
@@ -139,10 +133,8 @@ build {
     source      = "/var/log/daemon"
     destination = "./log/"
   }
-  # We have to make sure that the doas rights of the user are restricted again.
+  # Exit the packer build with a non zero value to keep the operating system running for tests.
   provisioner "shell" {
-    inline = [
-      "doas sed -i 's|permit nopass :wheel as root|permit nopass :wheel as root cmd /sbin/shutdown|g' /etc/doas.conf"
-    ]
+    inline = ["exit 0"]
   }
 }

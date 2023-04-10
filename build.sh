@@ -10,14 +10,13 @@ export fmt_end="\e[0m"
 export PACKER_LOG="1"
 export PACKER_LOG_PATH="log/packer.log"
 # Variables used in this script
-openbsd_version_long="7.3"
-openbsd_version_short="$(echo "${openbsd_version_long}" | tr -d .)"
+openbsd_version="7.3"
+openbsd_version_short="$(echo "${openbsd_version}" | tr -d .)"
 use_openbsd_snapshot="true" # If you use the latest development snapshot make sure to set the version to the current released verison number.
 packer_config_file_name="openbsd-packer.pkr.hcl"
 # Variables passed to packer
 packer_boot_wait="25"               # The time (in seconds) packer waits to proceed after the VM has been initially booted
 openbsd_hostname="openbsd-packer"   # The hostname inside the VM
-openbsd_username="user"             # The user (and password) that is created during the installation process
 openbsd_excluded_sets="-g* -m* -x*" # The sets that can be selected/deselected
 rc_firsttime_wait="100"             # If you have a slow internet connection you can increase this time (in seconds)
 # Default values for command line options
@@ -30,7 +29,7 @@ check_openbsd_install_image ()
     then
         url_path="snapshots"
     else
-        url_path="${openbsd_version_long}"
+        url_path="${openbsd_version}"
     fi
     # Check if the OpenBSD install image is available locally
     if [ ! -f install"${openbsd_version_short}".img ]
@@ -42,7 +41,7 @@ check_openbsd_install_image ()
         then
             printf "%b %bERROR:%b Downloading the OpenBSD arm64 install image did not succeed.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_red_bold}" "${fmt_end}"
             printf "%b %bERROR:%b Make sure you are connected to the internet correctly and can download the following file:\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_red_bold}" "${fmt_end}"
-            printf "%b %bERROR:%b https://cdn.openbsd.org/pub/OpenBSD/%b/arm64/install%b.img\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_red_bold}" "${fmt_end}" "${openbsd_version_long}" "${openbsd_version_short}"
+            printf "%b %bERROR:%b https://cdn.openbsd.org/pub/OpenBSD/%b/arm64/install%b.img\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_red_bold}" "${fmt_end}" "${openbsd_version}" "${openbsd_version_short}"
             exit 11
         fi
     fi
@@ -111,35 +110,35 @@ check_openbsd_install_image ()
 #parse "$@"
 #eval "set -- $REST"
 
-printf "################################################################################\n"
-printf "# Checking if there is still a vmware-vmx process left over from the last run\n"
-printf "################################################################################\n"
-if (ps aux | grep "vmware-vmx" | grep "VMware Fusion.app")
-then
-    printf "%b %bINFO:%b  There are still running vmware-vmx processes.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_bold}" "${fmt_end}"
-    printf "%b %bINFO:%b  Do want me to kill it/them? [Y\\\\n]: " "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_bold}" "${fmt_end}"
-    # Check if the --yes option was passed as command line option
-#    if [ "${ANSWER_YES}" = "1" ]
+#printf "################################################################################\n"
+#printf "# Checking if there is still a vmware-vmx process left over from the last run\n"
+#printf "################################################################################\n"
+#if (ps aux | grep "vmware-vmx" | grep "VMware Fusion.app")
+#then
+#    printf "%b %bINFO:%b  There are still running vmware-vmx processes.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_bold}" "${fmt_end}"
+#    printf "%b %bINFO:%b  Do want me to kill it/them? [Y\\\\n]: " "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_bold}" "${fmt_end}"
+#    # Check if the --yes option was passed as command line option
+##    if [ "${ANSWER_YES}" = "1" ]
+##    then
+##        answer="y"
+##        printf "\n"
+##    else
+#        read -r answer
+##    fi
+#    if [ "${answer}" = "" ] || [ "${answer}" = "Y" ] || [ "${answer}" = "y" ]
 #    then
-#        answer="y"
-#        printf "\n"
-#    else
-        read -r answer
+#        if ! pkill vmware-vmx
+#        then
+#            printf "%b %bERROR:%b The vmware-vmx process could not be killed successfully.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_red_bold}" "${fmt_end}"
+#            printf "%b %bERROR:%b Please check this manually, kill it and than rerun this script again.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_red_bold}" "${fmt_end}"
+#            exit 4
+#        else
+#            printf "%b %bINFO:%b  All vmware-vmx processes have been killed successfully.\n\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_bold}" "${fmt_end}"
+#        fi
 #    fi
-    if [ "${answer}" = "" ] || [ "${answer}" = "Y" ] || [ "${answer}" = "y" ]
-    then
-        if ! pkill vmware-vmx
-        then
-            printf "%b %bERROR:%b The vmware-vmx process could not be killed successfully.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_red_bold}" "${fmt_end}"
-            printf "%b %bERROR:%b Please check this manually, kill it and than rerun this script again.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_red_bold}" "${fmt_end}"
-            exit 4
-        else
-            printf "%b %bINFO:%b  All vmware-vmx processes have been killed successfully.\n\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_bold}" "${fmt_end}"
-        fi
-    fi
-else
-    printf "%b %bINFO:%b  There is no running vmware-vmx process related to this script.\n\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_bold}" "${fmt_end}"
-fi
+#else
+#    printf "%b %bINFO:%b  There is no running vmware-vmx process related to this script.\n\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${fmt_bold}" "${fmt_end}"
+#fi
 
 printf "################################################################################\n"
 printf "# Checking the software prerequisites\n"
@@ -271,10 +270,10 @@ printf "########################################################################
 if ! packer build -force \
                   -on-error=abort \
                   -var packer-boot-wait="${packer_boot_wait}" \
+                  -var openbsd-version="${openbsd_version}" \
                   -var use-openbsd-snapshot="${use_openbsd_snapshot}" \
                   -var openbsd-install-img="$(pwd)"/install"${openbsd_version_short}".vmdk \
                   -var openbsd-hostname="${openbsd_hostname}" \
-                  -var openbsd-username="${openbsd_username}" \
                   -var openbsd-excluded-sets="${openbsd_excluded_sets}" \
                   -var rc-firsttime-wait="${rc_firsttime_wait}" \
                   "${packer_config_file_name}"

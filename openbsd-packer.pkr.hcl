@@ -18,11 +18,7 @@ variable "openbsd-version" {
 }
 variable "use-openbsd-snapshot" {
   type    = bool
-  default = "false"
-}
-variable "openbsd-install-img" {
-  type    = string
-  default = "install73.img"
+  default = false
 }
 variable "openbsd-hostname" {
   type    = string
@@ -111,15 +107,6 @@ source "vmware-iso" "openbsd-packer" {
 
 build {
   sources = ["sources.vmware-iso.openbsd-packer"]
-  # Upgrade the system to the latest patch level
-  provisioner "shell" {
-    expect_disconnect = "true"
-    inline = concat(
-      # Only execute the syspatch if we are not using the OpenBSD snapshot.
-      ["${var.use-openbsd-snapshot}" == true ? "" : "syspatch"],
-      ["shutdown -r now"]
-    )
-  }
   # After finishing the setup we copy the system log locally.
   provisioner "file" {
     pause_before = "10s"
